@@ -121,7 +121,7 @@ export function OrganizePanel({ isOpen, onClose }: Props) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[560px]">
+      <DialogContent className="max-w-[560px] bg-[var(--bg-secondary)] border-[var(--border-primary)]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FolderKanban className="h-4 w-4" /> Organize

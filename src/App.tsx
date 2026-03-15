@@ -5,10 +5,13 @@ import { WelcomePage } from '@/pages/WelcomePage'
 import { ListPage } from '@/pages/ListPage'
 import { TimelinePage } from '@/pages/TimelinePage'
 import { useSync } from '@/hooks/useSync'
+import { usePostMessage } from '@/hooks/usePostMessage'
 import { useFilesStore } from '@/stores/filesStore'
 import { getAllCachedFiles } from '@/lib/storage'
 import type { LoadedFile } from '@/stores/filesStore'
 import { extractChatData, detectBranches, detectFileFormat } from '@/parsers/index'
+import { FloatPanel, FloatPanelTrigger } from '@/ai-chat/index'
+import '@/ai-chat/styles.css'
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
@@ -53,6 +56,7 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error
 
 function AppInner() {
   useSync()
+  usePostMessage()
   const { files, addFiles, setHydrated, isHydrating } = useFilesStore()
   const hasFiles = files.length > 0
 
@@ -91,14 +95,18 @@ function AppInner() {
   }
 
   return (
-    <PageShell>
-      <Routes>
-        <Route path="/" element={hasFiles ? <Navigate to="/list" replace /> : <WelcomePage />} />
-        <Route path="/list" element={<ListPage />} />
-        <Route path="/timeline/:fileId" element={<TimelinePage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </PageShell>
+    <>
+      <PageShell>
+        <Routes>
+          <Route path="/" element={hasFiles ? <Navigate to="/list" replace /> : <WelcomePage />} />
+          <Route path="/list" element={<ListPage />} />
+          <Route path="/timeline/:fileId" element={<TimelinePage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </PageShell>
+      <FloatPanel />
+      <FloatPanelTrigger position="bottom-left" />
+    </>
   )
 }
 

@@ -732,6 +732,7 @@ const AISettings = ({ settings, onAIChatConfigChange, onEmbeddingConfigChange })
         {/* 状态栏 */}
         <div className="mcp-stats">
           <span className="mcp-badge">{servers.length} {t('settings.mcp.serversCount')}</span>
+          <span style={{ color: 'var(--text-tertiary)', margin: '0 4px' }}>·</span>
           <span className="mcp-badge">{tools.length} {t('settings.mcp.toolsCount')}</span>
           <button
             className="btn-secondary"
@@ -913,7 +914,7 @@ const AboutSection = () => {
       {/* 应用信息 */}
       <SettingsSection title={t('settings.about.title')}>
         <SettingItem label={t('settings.about.appName')} description={t('settings.about.appDescription')} static={true} />
-        <SettingItem label={t('settings.about.version')} description={'v1.7.4'} static={true} />
+        <SettingItem label={t('settings.about.version')} description={`v${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '2.0.0'}`} static={true} />
         <SettingItem label={t('settings.about.github')} description={t('settings.about.githubDescription')}>
           <a
             href="https://github.com/Yalums/lyra-exporter"
