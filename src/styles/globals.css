@@ -216,3 +216,8 @@ body {
 
 /* shadcn: border color via CSS variable */
 * { border-color: rgb(var(--border) / 1); }
+
+/* shadcn Input: fix placeholder and focus */
+input::placeholder { color: var(--text-tertiary); opacity: 1; }
+input:focus-visible { outline: none; border-color: var(--accent-primary); }
+select:focus-visible { outline: none; border-color: var(--accent-primary); }

@@ -163,7 +163,14 @@ export function ListPage() {
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ maxWidth: 260, height: 32, fontSize: 13 }}
+          style={{
+            maxWidth: 260,
+            height: 32,
+            fontSize: 13,
+            background: 'var(--bg-secondary)',
+            borderColor: 'var(--border-primary)',
+            color: 'var(--text-primary)',
+          }}
         />
 
         {platforms.length > 1 && (
