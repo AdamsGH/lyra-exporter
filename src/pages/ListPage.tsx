@@ -4,8 +4,7 @@ import { useFiles } from '@/hooks/useFiles'
 import { useFilesStore } from '@/stores/filesStore'
 import { useI18n } from '@/i18n'
 import { deleteCachedFile } from '@/lib/storage'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const UnifiedCard = (require('../components/UnifiedCard') as any).Card
+import { Card as UnifiedCard } from '../components/UnifiedCard'
 
 const PLATFORM_COLORS: Record<string, string> = {
   claude: '#d97706',
