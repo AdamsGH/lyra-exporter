@@ -1,242 +1,177 @@
-import { useState, useMemo } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Star, Tag, Search, SlidersHorizontal } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { useFiles } from '@/hooks/useFiles'
 import { useFilesStore } from '@/stores/filesStore'
-import { useMetaStore } from '@/stores/metaStore'
-import { useProjectsStore } from '@/stores/projectsStore'
-import { cn } from '@/lib/utils'
-
-interface ParsedData {
-  title?: string
-  platform?: string
-  chat_history?: unknown[]
-  [key: string]: unknown
-}
-
-interface ConversationEntry {
-  fileId: string
-  fileName: string
-  conversationId: string
-  title: string
-  platform: string
-  messageCount: number
-  loadedAt: number
-}
+import { useI18n } from '@/i18n'
+import { deleteCachedFile } from '@/lib/storage'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const UnifiedCard = (require('../components/UnifiedCard') as any).Card
 
 const PLATFORM_COLORS: Record<string, string> = {
-  claude: 'bg-orange-500/15 text-orange-400 border-orange-500/20',
-  chatgpt: 'bg-green-500/15 text-green-400 border-green-500/20',
-  gemini: 'bg-blue-500/15 text-blue-400 border-blue-500/20',
-  grok: 'bg-purple-500/15 text-purple-400 border-purple-500/20',
-  copilot: 'bg-sky-500/15 text-sky-400 border-sky-500/20',
-  claude_code: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
+  claude: '#d97706',
+  chatgpt: '#19c37d',
+  gemini: '#4285f4',
+  deepseek: '#5b8def',
+  grok: '#a855f7',
+  kimi: '#06b6d4',
+  default: '#6b7280',
 }
 
-function platformBadge(platform: string) {
-  return PLATFORM_COLORS[platform] ?? 'bg-muted text-muted-foreground border-border'
+function getPlatformColor(platform: string) {
+  return PLATFORM_COLORS[platform?.toLowerCase()] ?? PLATFORM_COLORS.default
 }
 
 export function ListPage() {
   const navigate = useNavigate()
-  const files = useFilesStore((s) => s.files)
-  const { meta } = useMetaStore()
-  const { projects } = useProjectsStore()
-
+  const { t } = useI18n()
+  const { files, loadFromFileObjects, removeFile } = useFiles()
+  const setCurrentFile = useFilesStore((s) => s.setCurrentFile)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const folderInputRef = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState('')
-  const [filterStarred, setFilterStarred] = useState(false)
-  const [filterProjectId, setFilterProjectId] = useState<number | null>(null)
-  const [filterPlatform, setFilterPlatform] = useState<string | null>(null)
+  const [filterPlatform, setFilterPlatform] = useState('')
 
-  const conversations: ConversationEntry[] = useMemo(() => {
-    const result: ConversationEntry[] = []
-    for (const file of files) {
-      const parsed = file.parsed as ParsedData | null
-      if (!parsed) {
-        result.push({
-          fileId: file.id,
-          fileName: file.name,
-          conversationId: file.id,
-          title: file.name.replace(/\.json$/, ''),
-          platform: file.platform ?? 'unknown',
-          messageCount: 0,
-          loadedAt: file.loadedAt,
-        })
-        continue
-      }
-      result.push({
-        fileId: file.id,
-        fileName: file.name,
-        conversationId: file.id,
-        title: parsed.title || file.name.replace(/\.json$/, ''),
-        platform: parsed.platform ?? file.platform ?? 'unknown',
-        messageCount: Array.isArray(parsed.chat_history) ? parsed.chat_history.length : 0,
-        loadedAt: file.loadedAt,
-      })
+  const platforms = [...new Set(files.map((f) => f.platform).filter(Boolean))]
+
+  const filtered = files.filter((f) => {
+    const name = f.name.toLowerCase()
+    const q = search.toLowerCase()
+    if (q && !name.includes(q)) return false
+    if (filterPlatform && f.platform !== filterPlatform) return false
+    return true
+  })
+
+  async function handleFiles(fileList: FileList | null) {
+    if (!fileList) return
+    const jsonFiles = Array.from(fileList).filter((f) => f.name.endsWith('.json'))
+    if (jsonFiles.length === 0) return
+    await loadFromFileObjects(jsonFiles)
+  }
+
+  async function handleRemove(fileId: string, fileName: string) {
+    await deleteCachedFile(fileName)
+    removeFile(fileId)
+  }
+
+  function handleSelect(file: (typeof files)[0]) {
+    setCurrentFile(file.id)
+    navigate(`/timeline/${file.id}`)
+  }
+
+  // Build UnifiedCard-compatible item from our file
+  function toCardItem(file: (typeof files)[0], index: number) {
+    const parsed = file.parsed as {
+      format?: string
+      platform?: string
+      chat_history?: unknown[]
+      meta_info?: { title?: string; model?: string }
+    } | null
+    return {
+      type: 'file',
+      uuid: file.id,
+      name: file.name.replace(/\.json$/, ''),
+      originalName: file.name.replace(/\.json$/, ''),
+      fileName: file.name,
+      fileIndex: index,
+      isCurrentFile: false,
+      format: parsed?.format ?? parsed?.platform ?? 'unknown',
+      model: parsed?.meta_info?.model ?? '',
+      messageCount: parsed?.chat_history?.length ?? 0,
+      conversationCount: 1,
+      platform: file.platform ?? 'unknown',
+      created_at: null,
+      size: 0,
+      summary: `${parsed?.chat_history?.length ?? 0} messages`,
     }
-    return result
-  }, [files])
-
-  const filtered = useMemo(() => {
-    return conversations.filter((c) => {
-      const m = meta[c.conversationId]
-      if (filterStarred && !m?.starred) return false
-      if (filterProjectId && m?.project_id !== filterProjectId) return false
-      if (filterPlatform && c.platform !== filterPlatform) return false
-      if (search) {
-        const q = search.toLowerCase()
-        const inTitle = c.title.toLowerCase().includes(q)
-        const inTags = m?.tags?.some((t) => t.toLowerCase().includes(q))
-        if (!inTitle && !inTags) return false
-      }
-      return true
-    })
-  }, [conversations, meta, filterStarred, filterProjectId, filterPlatform, search])
-
-  const platforms = useMemo(() => [...new Set(conversations.map((c) => c.platform))], [conversations])
-
-  if (files.length === 0) {
-    navigate('/')
-    return null
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input
-            className="pl-8"
-            placeholder="Search conversations..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+    <div>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>
+          {t('listPage.title') || 'Conversations'}
+          <span style={{ marginLeft: 10, fontSize: 14, fontWeight: 400, color: 'var(--text-tertiary)' }}>
+            {files.length} {t('listPage.files') || 'files'}
+          </span>
+        </h2>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn-secondary small" onClick={() => fileInputRef.current?.click()}>
+            + {t('listPage.addFile') || 'Add File'}
+          </button>
+          <button className="btn-secondary small" onClick={() => folderInputRef.current?.click()}>
+            + {t('listPage.addFolder') || 'Add Folder'}
+          </button>
         </div>
+      </div>
 
-        <Button
-          variant={filterStarred ? 'secondary' : 'outline'}
-          size="sm"
-          onClick={() => setFilterStarred((v) => !v)}
-        >
-          <Star className={cn('h-4 w-4', filterStarred && 'fill-current text-yellow-400')} />
-          Starred
-        </Button>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <SlidersHorizontal className="h-4 w-4" /> Filter
-              {(filterProjectId || filterPlatform) && (
-                <span className="ml-1 h-1.5 w-1.5 rounded-full bg-primary" />
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            {projects.length > 0 && (
-              <>
-                <DropdownMenuLabel>Project</DropdownMenuLabel>
-                <DropdownMenuCheckboxItem
-                  checked={filterProjectId === null}
-                  onCheckedChange={() => setFilterProjectId(null)}
-                >
-                  All projects
-                </DropdownMenuCheckboxItem>
-                {projects.map((p) => (
-                  <DropdownMenuCheckboxItem
-                    key={p.id}
-                    checked={filterProjectId === p.id}
-                    onCheckedChange={() => setFilterProjectId(filterProjectId === p.id ? null : p.id)}
-                  >
-                    <span className="h-2 w-2 rounded-full mr-1.5 inline-block" style={{ background: p.color }} />
-                    {p.name}
-                  </DropdownMenuCheckboxItem>
-                ))}
-                <DropdownMenuSeparator />
-              </>
-            )}
-            <DropdownMenuLabel>Platform</DropdownMenuLabel>
-            <DropdownMenuCheckboxItem
-              checked={filterPlatform === null}
-              onCheckedChange={() => setFilterPlatform(null)}
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          placeholder={t('listPage.search') || 'Search...'}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            flex: 1,
+            minWidth: 200,
+            padding: '6px 12px',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-primary)',
+            borderRadius: 'var(--radius-sm)',
+            color: 'var(--text-primary)',
+            fontSize: 13,
+            outline: 'none',
+          }}
+        />
+        {platforms.length > 1 && (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              className={`btn-secondary small${!filterPlatform ? ' active' : ''}`}
+              onClick={() => setFilterPlatform('')}
             >
-              All platforms
-            </DropdownMenuCheckboxItem>
+              All
+            </button>
             {platforms.map((p) => (
-              <DropdownMenuCheckboxItem
+              <button
                 key={p}
-                checked={filterPlatform === p}
-                onCheckedChange={() => setFilterPlatform(filterPlatform === p ? null : p)}
+                className={`btn-secondary small${filterPlatform === p ? ' active' : ''}`}
+                onClick={() => setFilterPlatform(filterPlatform === p ? '' : p ?? '')}
+                style={filterPlatform === p ? { borderColor: getPlatformColor(p ?? ''), color: getPlatformColor(p ?? '') } : {}}
               >
                 {p}
-              </DropdownMenuCheckboxItem>
+              </button>
             ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className="text-xs text-muted-foreground">
-        {filtered.length} of {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
-      </div>
-
-      <div className="grid gap-2">
-        {filtered.map((c) => {
-          const m = meta[c.conversationId]
-          const project = m?.project_id ? projects.find((p) => p.id === m.project_id) : null
-          return (
-            <div
-              key={c.conversationId}
-              className="group flex items-start gap-3 rounded-lg border border-border bg-card px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => navigate(`/timeline/${c.fileId}`)}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium truncate">{c.title}</span>
-                  {m?.starred && <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 shrink-0" />}
-                </div>
-
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <Badge variant="outline" className={cn('text-xs h-5 px-1.5', platformBadge(c.platform))}>
-                    {c.platform}
-                  </Badge>
-                  {c.messageCount > 0 && (
-                    <span className="text-xs text-muted-foreground">{c.messageCount} messages</span>
-                  )}
-                  {project && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: project.color }} />
-                      {project.name}
-                    </span>
-                  )}
-                  {m?.status && (
-                    <Badge variant="secondary" className="text-xs h-5 px-1.5">{m.status}</Badge>
-                  )}
-                  {m?.tags?.map((tag) => (
-                    <span key={tag} className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                      <Tag className="h-3 w-3" />{tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <span className="text-xs text-muted-foreground shrink-0 pt-0.5">
-                {new Date(c.loadedAt).toLocaleTimeString()}
-              </span>
-            </div>
-          )
-        })}
-
-        {filtered.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-12">
-            No conversations match your filters.
-          </p>
+          </div>
         )}
       </div>
+
+      {/* Grid */}
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-tertiary)' }}>
+          {files.length === 0
+            ? t('listPage.empty') || 'No files loaded. Drop JSON files here or click Add File.'
+            : t('listPage.noResults') || 'No matching files.'}
+        </div>
+      ) : (
+        <div className="conversations-grid">
+          {filtered.map((file, i) => (
+            <UnifiedCard
+              key={file.id}
+              item={toCardItem(file, i) as any}
+              isSelected={false}
+              onSelect={() => handleSelect(file)}
+              onRemove={() => handleRemove(file.id, file.name)}
+            />
+          ))}
+        </div>
+      )}
+
+      <input ref={fileInputRef} type="file" accept=".json" multiple hidden onChange={(e) => handleFiles(e.target.files)} />
+      <input ref={folderInputRef} type="file" accept=".json" multiple hidden
+        {...{ webkitdirectory: '', directory: '' } as React.InputHTMLAttributes<HTMLInputElement>}
+        onChange={(e) => handleFiles(e.target.files)}
+      />
     </div>
   )
 }

@@ -1,80 +1,80 @@
 import { useNavigate } from 'react-router-dom'
-import { Cloud, Settings, FolderKanban, Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { useUiStore } from '@/stores/uiStore'
-import { useFilesStore } from '@/stores/filesStore'
 import { CloudPanel } from '@/components/cloud/CloudPanel'
-import { SettingsPanel } from '@/components/layout/SettingsPanel'
 import { OrganizePanel } from '@/components/layout/OrganizePanel'
+import { SettingsPanel } from '@/components/layout/SettingsPanel'
+import { useState } from 'react'
+
+const navStyle: React.CSSProperties = {
+  background: 'var(--bg-overlay)',
+  backdropFilter: 'blur(10px)',
+  borderBottom: '1px solid var(--border-primary)',
+  padding: '10px 20px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  position: 'sticky',
+  top: 0,
+  zIndex: 1000,
+  flexShrink: 0,
+}
+
+const logoStyle: React.CSSProperties = {
+  fontSize: 18,
+  fontWeight: 700,
+  background: 'var(--gradient-primary)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  backgroundClip: 'text',
+  cursor: 'pointer',
+  letterSpacing: 2,
+}
 
 export function Navbar() {
-  const { backendAvailable, openPanel, setOpenPanel } = useUiStore()
-  const { files, clearFiles } = useFilesStore()
   const navigate = useNavigate()
-
-  function handleHome() {
-    clearFiles()
-    navigate('/')
-  }
+  const [showCloud, setShowCloud] = useState(false)
+  const [showOrganize, setShowOrganize] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-12 items-center border-b border-border bg-card px-4 gap-3">
-        <button
-          onClick={handleHome}
-          className="text-sm font-semibold text-foreground hover:text-primary transition-colors"
-        >
-          Lyra Exporter
-        </button>
-
-        {files.length > 0 && (
-          <>
-            <Separator orientation="vertical" className="h-4" />
-            <Button variant="ghost" size="sm" onClick={handleHome}>
-              <Plus className="h-4 w-4" />
-              New
-            </Button>
-          </>
-        )}
-
-        <div className="ml-auto flex items-center gap-1">
-          {backendAvailable && (
-            <Button
-              variant={openPanel === 'cloud' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setOpenPanel('cloud')}
-            >
-              <Cloud className="h-4 w-4" />
-              Cloud
-            </Button>
-          )}
-
-          {backendAvailable && (
-            <Button
-              variant={openPanel === 'organize' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setOpenPanel('organize')}
-            >
-              <FolderKanban className="h-4 w-4" />
-              Organize
-            </Button>
-          )}
-
-          <Button
-            variant={openPanel === 'settings' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setOpenPanel('settings')}
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Button>
+      <nav style={navStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <span style={logoStyle} onClick={() => navigate('/')}>LYRA</span>
         </div>
-      </header>
-
-      <CloudPanel isOpen={openPanel === 'cloud'} onClose={() => setOpenPanel(null)} />
-      <SettingsPanel isOpen={openPanel === 'settings'} onClose={() => setOpenPanel(null)} />
-      <OrganizePanel isOpen={openPanel === 'organize'} onClose={() => setOpenPanel(null)} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <NavBtn onClick={() => setShowCloud(true)}>☁ Cloud</NavBtn>
+          <NavBtn onClick={() => setShowOrganize(true)}>✦ Organize</NavBtn>
+          <NavBtn onClick={() => setShowSettings(true)}>⚙ Settings</NavBtn>
+        </div>
+      </nav>
+      <CloudPanel isOpen={showCloud} onClose={() => setShowCloud(false)} />
+      <OrganizePanel isOpen={showOrganize} onClose={() => setShowOrganize(false)} />
+      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </>
+  )
+}
+
+function NavBtn({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '4px 12px',
+        fontSize: 12,
+        background: 'var(--bg-tertiary)',
+        color: 'var(--text-primary)',
+        border: '1px solid var(--border-primary)',
+        borderRadius: 'var(--radius-sm)',
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        transition: 'all 0.15s ease',
+      }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--border-primary)' }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tertiary)' }}
+    >
+      {children}
+    </button>
   )
 }

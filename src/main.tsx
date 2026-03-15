@@ -3,6 +3,13 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './styles/globals.css'
+import './styles/reset.css'
+import './styles/components.css'
+import './styles/app.css'
+import './styles/cards-timeline.css'
+import './styles/message-detail.css'
+import './styles/filters-settings.css'
+import './styles/responsive.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
