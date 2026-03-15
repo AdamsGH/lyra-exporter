@@ -60,6 +60,9 @@ export function useSync() {
     return new File([blob], filename, { type: 'application/json' })
   }, [])
 
+  // On startup with backend: sync S3 file list to IndexedDB
+  // (actual download happens lazily when user loads a file)
+
   return {
     backendAvailable,
     s3Files,

@@ -9,9 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useFilesStore } from '@/stores/filesStore'
 import { useMeta } from '@/hooks/useMeta'
 import { useProjectsStore } from '@/stores/projectsStore'
+import { useI18n } from '@/i18n'
 import ConversationTimeline from '../components/ConversationTimeline'
 import { MarkManager } from '../utils/data/markManager'
 import { SortManager } from '../utils/data/sortManager'
+import { StatsCalculator } from '../utils/data/statsCalculator'
 import { cn } from '@/lib/utils'
 
 class TimelineErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -128,11 +130,14 @@ function MetaDialog({ isOpen, onClose, conversationId }: MetaDialogProps) {
 export function TimelinePage() {
   const { fileId } = useParams<{ fileId: string }>()
   const navigate = useNavigate()
-  const file = useFilesStore((s) => s.files.find((f) => f.id === fileId))
+  const { t } = useI18n()
+  const files = useFilesStore((s) => s.files)
+  const file = files.find((f) => f.id === fileId)
   const [metaOpen, setMetaOpen] = useState(false)
   const [markVersion, setMarkVersion] = useState(0)
   const [sortVersion, setSortVersion] = useState(0)
   const [branchState, setBranchState] = useState(null)
+  const [hideNavbar, setHideNavbar] = useState(false)
   const markManagerRef = useRef<InstanceType<typeof MarkManager> | null>(null)
   const sortManagerRef = useRef<InstanceType<typeof SortManager> | null>(null)
 
@@ -144,14 +149,12 @@ export function TimelinePage() {
     [key: string]: unknown
   } | null
 
-  // Init MarkManager when file changes
   useEffect(() => {
     if (!fileId) return
     markManagerRef.current = new MarkManager(fileId)
     setMarkVersion((v) => v + 1)
   }, [fileId])
 
-  // Init SortManager when messages are available
   useEffect(() => {
     const msgs = parsed?.chat_history ?? []
     if (msgs.length > 0 && fileId) {
@@ -161,9 +164,7 @@ export function TimelinePage() {
   }, [fileId, parsed])
 
   const currentMarks = useMemo(() => {
-    return markManagerRef.current
-      ? markManagerRef.current.getMarks()
-      : { completed: new Set(), important: new Set(), deleted: new Set() }
+    return markManagerRef.current?.getMarks() ?? { completed: new Set(), important: new Set(), deleted: new Set() }
   }, [markVersion])
 
   const sortedMessages = useMemo(() => {
@@ -172,6 +173,17 @@ export function TimelinePage() {
     const sorted = sortManagerRef.current.getSortedMessages()
     return sorted.length === msgs.length ? sorted : msgs
   }, [parsed, sortVersion])
+
+  const allMarksStats = useMemo(() => {
+    return StatsCalculator.getAllMarksStats(files.map((f) => ({ name: f.name })))
+  }, [files, markVersion])
+
+  const stats = useMemo(() => {
+    return StatsCalculator.calculateTimelineStats(
+      sortedMessages, sortedMessages, files, allMarksStats, false, conversation
+    )
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortedMessages, files, allMarksStats])
 
   const markActions = useMemo(() => ({
     toggleMark: (messageIndex: number, markType: string) => {
@@ -200,7 +212,6 @@ export function TimelinePage() {
       sortManagerRef.current?.resetSort()
       setSortVersion((v) => v + 1)
     },
-    hasCustomSort: () => sortManagerRef.current?.hasCustomSort() ?? false,
   }), [])
 
   const conversation = useMemo(() => {
@@ -226,47 +237,81 @@ export function TimelinePage() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/list')}>
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Button>
-        <span className="text-sm font-medium flex-1 truncate">
-          {conversation?.name ?? file.name}
-        </span>
-        <Button variant="outline" size="sm" onClick={() => setMetaOpen(true)}>
-          <FolderKanban className="h-4 w-4" /> Details
-        </Button>
-      </div>
-
-      {parsed ? (
-        <TimelineErrorBoundary>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <ConversationTimeline
-            data={parsed as any}
-            conversation={conversation as any}
-            messages={sortedMessages as any}
-            marks={currentMarks as any}
-            markActions={markActions as any}
-            format={parsed.format ?? parsed.platform ?? 'unknown'}
-            sortActions={sortActions as any}
-            hasCustomSort={sortManagerRef.current?.hasCustomSort() ?? false}
-            enableSorting={true}
-            files={[file] as any}
-            currentFileIndex={0 as any}
-            searchQuery=""
-            branchState={branchState as any}
-            onBranchStateChange={setBranchState as any}
-          />
-        </TimelineErrorBoundary>
-      ) : (
-        <div className="rounded-lg border border-border p-6 text-center text-muted-foreground text-sm">
-          Could not parse this file format.
-          <pre className="mt-4 text-xs text-left overflow-auto max-h-96">
-            {JSON.stringify(file.raw, null, 2).slice(0, 3000)}
-          </pre>
-        </div>
+    <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {!hideNavbar && (
+        <nav className="app-navbar">
+          <div className="navbar-left">
+            <button className="btn-secondary small" onClick={() => navigate('/list')}>
+              ← Back
+            </button>
+            <div className="logo">
+              <span className="logo-text">{conversation?.name ?? file.name}</span>
+            </div>
+          </div>
+          <div className="navbar-right">
+            <button className="btn-secondary small" onClick={() => setMetaOpen(true)}>
+              ✦ Details
+            </button>
+          </div>
+        </nav>
       )}
+
+      <div className="main-container">
+        <div className="content-area">
+          {/* Stats panel — same classes as original */}
+          <div className="stats-panel">
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-value">{stats.totalMessages}</div>
+                <div className="stat-label">{t('app.stats.totalMessages')}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">{stats.conversationCount}</div>
+                <div className="stat-label">{t('app.stats.conversationCount')}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">{files.length}</div>
+                <div className="stat-label">{t('app.stats.fileCount')}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">{allMarksStats.total}</div>
+                <div className="stat-label">{t('app.stats.markedCount')}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="view-content">
+            {parsed ? (
+              <TimelineErrorBoundary>
+                <ConversationTimeline
+                  data={parsed as any}
+                  conversation={conversation as any}
+                  messages={sortedMessages as any}
+                  marks={currentMarks as any}
+                  markActions={markActions as any}
+                  format={parsed.format ?? parsed.platform ?? 'unknown'}
+                  sortActions={sortActions as any}
+                  hasCustomSort={sortManagerRef.current?.hasCustomSort() ?? false}
+                  enableSorting={true}
+                  files={[file] as any}
+                  currentFileIndex={0 as any}
+                  searchQuery=""
+                  branchState={branchState as any}
+                  onBranchStateChange={setBranchState as any}
+                  onHideNavbar={setHideNavbar as any}
+                />
+              </TimelineErrorBoundary>
+            ) : (
+              <div className="empty-state">
+                <p>Could not parse this file format.</p>
+                <pre style={{ fontSize: 11, maxHeight: 400, overflow: 'auto' }}>
+                  {JSON.stringify(file.raw, null, 2).slice(0, 3000)}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       <MetaDialog isOpen={metaOpen} onClose={() => setMetaOpen(false)} conversationId={fileId ?? ''} />
     </div>

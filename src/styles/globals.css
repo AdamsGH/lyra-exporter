@@ -117,6 +117,18 @@
   }
 }
 
+@import "./variables.css";
+@import "./reset.css";
+@import "./components.css";
+@import "./app.css";
+@import "./export.css";
+@import "./screenshot.css";
+@import "./cards-timeline.css";
+@import "./message-detail.css";
+@import "./whiteboard.css";
+@import "./filters-settings.css";
+@import "./responsive.css";
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));

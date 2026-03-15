@@ -107,7 +107,7 @@ export function ListPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="container mx-auto px-4 py-6 max-w-4xl flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />

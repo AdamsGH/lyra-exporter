@@ -59,7 +59,7 @@ export function WelcomePage() {
   const handleDragLeave = useCallback(() => setDragging(false), [])
 
   return (
-    <div className="flex flex-col items-center gap-8 pt-12">
+    <div className="container mx-auto px-4 py-8 max-w-2xl flex flex-col items-center gap-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight">Lyra Exporter</h1>
         <p className="mt-2 text-muted-foreground">Manage and explore your AI chat conversations</p>
