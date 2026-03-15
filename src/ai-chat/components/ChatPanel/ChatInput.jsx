@@ -5,7 +5,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { Textarea, IconButton, IconSend, IconLoading } from '../Common/index.jsx'
-import { useAutoResize } from '../../hooks/index.js'
+import { useAutoResize } from '../../hooks/index'
 
 /**
  * 聊天输入组件

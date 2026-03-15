@@ -6,12 +6,13 @@ import path from 'path'
 export default defineConfig({
   plugins: [
     tailwindcss(),
-    react(),
+    react({ include: /\.(jsx|tsx|js)$/ }),
   ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
   },
   build: {
     outDir: 'build',

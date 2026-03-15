@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useI18n } from '../../index.js';
+import { useI18n } from '../../index';
 
 const CanvasSelector = ({
   canvasList,

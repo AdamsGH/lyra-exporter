@@ -5,7 +5,7 @@
  * ⚠️ 配置管理：配置由外部（SettingsManager）管理，services 不保存配置到 localStorage
  */
 
-import { DEFAULT_AI_CONFIG } from '../config/aiConfig.js'
+import { DEFAULT_AI_CONFIG } from '../config/aiConfig'
 import StorageManager from '../utils/storageManager'
 
 // ============================================

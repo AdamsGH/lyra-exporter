@@ -5,9 +5,9 @@
 
 import React, { useState } from 'react'
 import { Badge, IconButton, IconTrash, IconRefresh, IconClose } from '../Common/index.jsx'
-import { useContextStore } from '../../hooks/index.js'
-import { contextActions } from '../../store/index.js'
-import { useI18n } from '../../../index.js'
+import { useContextStore } from '../../hooks/index'
+import { contextActions } from '../../store/index'
+import { useI18n } from '../../../index'
 
 /**
  * 估算token数量（简化算法）

@@ -4,7 +4,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { getGlobalSearchManager } from '../utils/globalSearchManager';
 import { getRenameManager } from '../utils/renameManager';
-import { useI18n } from '../index.js';
+import { useI18n } from '../index';
 
 /**
  * 移动端全局搜索面板组件

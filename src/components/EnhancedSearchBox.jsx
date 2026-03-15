@@ -2,7 +2,7 @@
 // 简化搜索框 - 回车打开ActionPanel
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useI18n } from '../index.js';
+import { useI18n } from '../index';
 
 /**
  * 简化搜索框组件 - 输入后回车打开ActionPanel

@@ -5,8 +5,8 @@
 
 import React, { useState, useCallback, useEffect } from 'react'
 import { Button, Input, Badge, IconCheck } from '../Common/index.jsx'
-import { useSettingsStore } from '../../hooks/index.js'
-import { chatService } from '../../services/ChatService.js'
+import { useSettingsStore } from '../../hooks/index'
+import { chatService } from '../../services/ChatService'
 
 /**
  * 模型选项

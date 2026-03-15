@@ -7,7 +7,7 @@ import { getSemanticSearchManager, extractMessagesForSemantic } from '../utils/s
 import { getAllMarksStats } from '../utils/data/markManager';
 import { generateFileCardUuid, generateConversationCardUuid } from '../utils/data/uuidManager';
 import { DateTimeUtils } from '../utils/fileParser';
-import { useI18n } from '../index.js';
+import { useI18n } from '../index';
 import StorageManager from '../utils/storageManager';
 
 /**

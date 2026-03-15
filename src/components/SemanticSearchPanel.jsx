@@ -4,7 +4,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { getSemanticSearchManager, extractMessagesForSemantic } from '../utils/semanticSearchManager';
 import { getGlobalSearchManager } from '../utils/globalSearchManager';
-import { useI18n } from '../index.js';
+import { useI18n } from '../index';
 
 /**
  * 对话式语义搜索面板

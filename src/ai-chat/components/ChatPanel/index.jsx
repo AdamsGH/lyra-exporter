@@ -8,7 +8,7 @@ import { MessageList } from './MessageList.jsx'
 import { ChatInput } from './ChatInput.jsx'
 import { ContextStatus, ContextDetail } from './ContextStatus.jsx'
 import { IconButton, IconTrash, IconRefresh, Divider } from '../Common/index.jsx'
-import { useChatService, useContextStore } from '../../hooks/index.js'
+import { useChatService, useContextStore } from '../../hooks/index'
 
 /**
  * 对话面板组件

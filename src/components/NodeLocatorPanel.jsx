@@ -2,7 +2,7 @@
 // 节点定位面板 - 显示搜索结果和节点可视化
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useI18n } from '../index.js';
+import { useI18n } from '../index';
 import { DateTimeUtils } from '../utils/fileParser';
 
 /**

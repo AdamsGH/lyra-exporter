@@ -1,7 +1,7 @@
 // components/FullExportCardFilter.js
 import React, { useState, useEffect } from 'react';
 import LanguageSwitcher from './LanguageSwitcher';
-import { useI18n } from '../index.js';
+import { useI18n } from '../index';
 
 const FullExportCardFilter = ({
   filters,

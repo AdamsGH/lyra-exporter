@@ -2,7 +2,7 @@
 // Free-form canvas whiteboard for visualizing messages from multiple conversations
 import React, { useState, useRef, useCallback, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
 import MessageDetail from './MessageDetail';
-import { useI18n } from '../index.js';
+import { useI18n } from '../index';
 import { useContextBridge } from '../ai-chat';
 import StorageManager from '../utils/storageManager';
 import CanvasManager from '../utils/canvasManager';

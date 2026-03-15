@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import PlatformIcon from '../PlatformIcon';
-import { useI18n } from '../../index.js';
+import { useI18n } from '../../index';
 
 // Simplified markdown components for card preview
 const cardMarkdownComponents = {

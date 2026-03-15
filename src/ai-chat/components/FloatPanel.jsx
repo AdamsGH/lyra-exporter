@@ -12,8 +12,8 @@ import {
   IconMaximize,
   IconPin
 } from './Common/index.jsx'
-import { usePanelStore, useDraggable, useResizable } from '../hooks/index.js'
-import { useI18n } from '../../index.js'
+import { usePanelStore, useDraggable, useResizable } from '../hooks/index'
+import { useI18n } from '../../index'
 
 /**
  * 浮窗头部组件

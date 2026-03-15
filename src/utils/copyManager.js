@@ -1,7 +1,7 @@
 // utils/copyManager.js
 // 统一的复制功能管理模块
 
-import { StorageUtils } from '../App';
+import { StorageUtils } from '../compat';
 import { TextUtils, formatFileSize } from './fileParser';
 import {
   escapeXml,

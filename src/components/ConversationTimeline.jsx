@@ -7,7 +7,7 @@ import MessageDetail from './MessageDetail';
 import PlatformIcon from './PlatformIcon';
 import { copyMessage } from '../utils/copyManager';
 import { PlatformUtils, DateTimeUtils, TextUtils } from '../utils/fileParser';
-import { useI18n } from '../index.js';
+import { useI18n } from '../index';
 import { getRenameManager } from '../utils/renameManager';
 import StorageManager from '../utils/storageManager';
 // AI Chat 上下文桥接

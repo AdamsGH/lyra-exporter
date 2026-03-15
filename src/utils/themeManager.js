@@ -1,7 +1,7 @@
 // utils/themeManager.js
 // 主题管理工具
 
-import { StorageUtils } from '../App';
+import { StorageUtils } from '../compat';
 
 /**
  * 主题管理工具

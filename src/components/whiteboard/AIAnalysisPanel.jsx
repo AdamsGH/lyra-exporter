@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useI18n } from '../../index.js';
+import { useI18n } from '../../index';
 import StorageManager from '../../utils/storageManager';
-import { DEFAULT_AI_CONFIG } from '../../config/aiConfig.js';
+import { DEFAULT_AI_CONFIG } from '../../config/aiConfig';
 
 /**
  * AI Analysis Panel for whiteboard multi-select analysis.

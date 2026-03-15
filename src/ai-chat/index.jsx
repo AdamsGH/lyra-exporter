@@ -30,10 +30,10 @@
 // Imports
 // ============================================
 
-import { chatService, mcpService, registerBuiltinMCPs as registerBuiltinMCPsInternal } from './services.js'
-import { contextActions, panelActions } from './store.js'
+import { chatService, mcpService, registerBuiltinMCPs as registerBuiltinMCPsInternal } from './services'
+import { contextActions, panelActions } from './store'
 import { FloatPanel as FloatPanelComponent, FloatPanelTrigger as FloatPanelTriggerComponent } from './components.jsx'
-import { DEFAULT_AI_CONFIG } from '../config/aiConfig.js'
+import { DEFAULT_AI_CONFIG } from '../config/aiConfig'
 
 // ============================================
 // 组件导出
@@ -53,7 +53,7 @@ export {
 // 服务导出
 // ============================================
 
-export { mcpService, chatService, registerBuiltinMCPs } from './services.js'
+export { mcpService, chatService, registerBuiltinMCPs } from './services'
 
 // ============================================
 // Store导出
@@ -64,7 +64,7 @@ export {
   chatStore, chatActions,
   panelStore, panelActions,
   mcpStore, mcpActions
-} from './store.js'
+} from './store'
 
 // ============================================
 // Hooks导出
@@ -81,7 +81,7 @@ export {
   useResizable,
   useAutoResize,
   useContextBridge
-} from './hooks.js'
+} from './hooks'
 
 // ============================================
 // 初始化函数

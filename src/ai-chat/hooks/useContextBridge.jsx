@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useRef } from 'react'
-import { contextActions, chatStore } from '../store/index.js'
+import { contextActions, chatStore } from '../store/index'
 
 /**
  * 上下文桥接 Hook

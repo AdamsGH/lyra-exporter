@@ -1,5 +1,5 @@
 // utils/exportManager.js
-import { StorageUtils } from '../App';
+import { StorageUtils } from '../compat';
 import { DateTimeUtils, FileUtils } from './fileParser';
 import { generateFileCardUuid, generateConversationCardUuid, parseUuid, generateFileHash } from './data/uuidManager';
 import { extractChatData, detectBranches } from './fileParser';

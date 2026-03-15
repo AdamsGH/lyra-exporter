@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import PlatformIcon from './PlatformIcon';
 import FullExportCardFilter from './FullExportCardFilter';
 import { DateTimeUtils, FileUtils, PlatformUtils } from '../utils/fileParser';
-import { useI18n } from '../index.js';
+import { useI18n } from '../index';
 import { getRenameManager } from '../utils/renameManager';
 
 /**

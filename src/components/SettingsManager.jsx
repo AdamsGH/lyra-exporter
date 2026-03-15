@@ -6,14 +6,14 @@ import { ThemeUtils } from '../utils/themeManager';
 import { StorageUtils } from '../App';
 import { CopyConfigManager } from '../utils/copyManager';
 import LanguageSwitcher from './LanguageSwitcher';
-import { useI18n } from '../index.js';
+import { useI18n } from '../index';
 import StorageManager from '../utils/storageManager';
 
 // AI Chat相关导入
-import { chatService, useMCPService } from '../ai-chat/index.js';
+import { chatService, useMCPService } from '../ai-chat/index';
 
 // 导入共享AI配置
-import { DEFAULT_AI_CONFIG } from '../config/aiConfig.js';
+import { DEFAULT_AI_CONFIG } from '../config/aiConfig';
 
 /**
  * 导出配置管理器

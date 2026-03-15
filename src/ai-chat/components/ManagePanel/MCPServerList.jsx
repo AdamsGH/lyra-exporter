@@ -17,7 +17,7 @@ import {
   IconLoading,
   Divider
 } from '../Common/index.jsx'
-import { useMCPService } from '../../hooks/index.js'
+import { useMCPService } from '../../hooks/index'
 
 /**
  * 服务器项组件

@@ -9,8 +9,8 @@ import {
   chatStore, chatActions,
   panelStore, panelActions,
   mcpStore, mcpActions
-} from './store.js'
-import { chatService, mcpService } from './services.js'
+} from './store'
+import { chatService, mcpService } from './services'
 
 // ============================================
 // Store Hooks - 状态订阅

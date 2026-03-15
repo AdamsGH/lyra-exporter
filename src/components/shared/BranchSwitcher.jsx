@@ -2,7 +2,7 @@
 // 从 ConversationTimeline.js 提取的独立分支切换器组件
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { useI18n } from '../../index.js';
+import { useI18n } from '../../index';
 
 const BranchSwitcher = ({
   branchPoint,

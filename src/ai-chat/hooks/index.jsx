@@ -10,12 +10,12 @@ import {
   panelStore, panelActions,
   mcpStore, mcpActions,
   settingsStore, settingsActions
-} from '../store/index.js'
-import { chatService } from '../services/ChatService.js'
-import { mcpService } from '../services/MCPService.js'
+} from '../store/index'
+import { chatService } from '../services/ChatService'
+import { mcpService } from '../services/MCPService'
 
 // 导出 useContextBridge
-export { useContextBridge } from './useContextBridge.js'
+export { useContextBridge } from './useContextBridge'
 
 // ============================================
 // Store Hooks

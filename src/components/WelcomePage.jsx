@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, MessageCircle, Download, Database, Info, Star, Brain, Clock, FolderTree, Moon, Sun, CheckCircle, Wrench, Sparkles, Package} from 'lucide-react';
-import { useI18n } from '../index.js';
-import LanguageSwitcher from '../components/LanguageSwitcher.js';
-import { ThemeUtils } from '../utils/themeManager.js';
-import { batchExportManager } from '../utils/batchExportManager.js';
+import { useI18n } from '../index';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { ThemeUtils } from '../utils/themeManager';
+import { batchExportManager } from '../utils/batchExportManager';
 
 // 隐私保障说明组件 - 国际化版本（简化版）
 const PrivacyAssurance = () => {

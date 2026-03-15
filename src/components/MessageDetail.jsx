@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, Component } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getImageDisplayData, formatFileSize } from '../utils/fileParser';
-import { useI18n } from '../index.js';
+import { useI18n } from '../index';
 
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';

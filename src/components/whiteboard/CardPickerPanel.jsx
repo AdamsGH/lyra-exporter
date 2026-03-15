@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useI18n } from '../../index.js';
+import { useI18n } from '../../index';
 import { extractChatData, detectBranches } from '../../utils/fileParser';
 import { TextUtils, DateTimeUtils } from '../../utils/fileParser';
 import PlatformIcon from '../PlatformIcon';
