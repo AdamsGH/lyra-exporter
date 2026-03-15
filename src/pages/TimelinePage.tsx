@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, Component, type ReactNode, type ErrorInfo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Star, Tag, FolderKanban } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -11,32 +11,49 @@ import {
 import { useFilesStore } from '@/stores/filesStore'
 import { useMeta } from '@/hooks/useMeta'
 import { useProjectsStore } from '@/stores/projectsStore'
-import { useMetaStore } from '@/stores/metaStore'
 import ConversationTimeline from '../components/ConversationTimeline'
+import { MarkManager } from '../utils/data/markManager'
 import { cn } from '@/lib/utils'
 
-// Minimal MarkManager shim for ConversationTimeline
+class TimelineErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { error: null }
+  }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error('Timeline error:', error, info) }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
+          <p className="text-sm font-medium text-destructive mb-2">Failed to render timeline</p>
+          <pre className="text-xs text-muted-foreground overflow-auto max-h-64 whitespace-pre-wrap">
+            {this.state.error.message}
+            {'\n\n'}
+            {this.state.error.stack?.slice(0, 1000)}
+          </pre>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 function useMarkManager(fileId: string) {
-  const [marks, setMarks] = useState<Record<string, string>>({})
-  const { update } = useMetaStore()
+  const [, forceUpdate] = useState(0)
+  const managerRef = useState(() => new MarkManager(fileId))[0]
 
   const markActions = useMemo(() => ({
     toggleMark: (messageIndex: number, markType: string) => {
-      setMarks((prev) => {
-        const key = String(messageIndex)
-        const updated = { ...prev }
-        if (updated[key] === markType) {
-          delete updated[key]
-        } else {
-          updated[key] = markType
-        }
-        return updated
-      })
+      managerRef.toggleMark(messageIndex, markType)
+      forceUpdate((v) => v + 1)
     },
-    getMarks: () => marks,
-    clearMarks: () => setMarks({}),
-  }), [marks])
+    isMarked: (messageIndex: number, markType: string) => managerRef.isMarked(messageIndex, markType),
+    clearAllMarks: () => { managerRef.clearAllMarks?.(); forceUpdate((v) => v + 1) },
+    getMarks: () => managerRef.getMarks(),
+  }), [managerRef])
 
+  const marks = managerRef.getMarks()
   return { marks, markActions }
 }
 
@@ -193,13 +210,15 @@ export function TimelinePage() {
       </div>
 
       {parsed ? (
-        <ConversationTimeline
-          data={parsed}
-          messages={parsed.chat_history ?? []}
-          marks={marks}
-          markActions={markActions}
-          format={parsed.format ?? parsed.platform ?? 'unknown'}
-        />
+        <TimelineErrorBoundary>
+          <ConversationTimeline
+            data={parsed}
+            messages={parsed.chat_history ?? []}
+            marks={marks}
+            markActions={markActions}
+            format={parsed.format ?? parsed.platform ?? 'unknown'}
+          />
+        </TimelineErrorBoundary>
       ) : (
         <div className="rounded-lg border border-border p-6 text-center text-muted-foreground text-sm">
           Could not parse this file format.
