@@ -92,7 +92,7 @@ export function ConversationGrid({ items, onRemove, onReorder, onRenameConfirm }
     count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => CARD_HEIGHT + GAP,
-    overscan: 3,
+    overscan: 5,
   })
 
   const sensors = useSensors(
