@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ThemeUtils } from '../utils/themeManager';
-import { StorageUtils } from '../App';
+import { StorageUtils } from '../compat';
 import { CopyConfigManager } from '../utils/copyManager';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../index';
