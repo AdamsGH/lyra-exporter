@@ -232,7 +232,7 @@ export function ListPage() {
           <p className="m-0 text-sm">Drop JSON files here or click the button below.</p>
         </div>
       ) : (
-        <div className="conversations-grid">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
           {filteredCards.map((card) => (
             <UnifiedCard
               key={card.uuid}

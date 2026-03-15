@@ -9,12 +9,20 @@ import koTranslations from '../langs/ko.json'
 const STORAGE_KEY = 'language'
 const DEFAULT_LANGUAGE = 'en'
 
-const SUPPORTED_LANGUAGES: Record<string, string> = {
-  en: 'English',
-  zh: '中文',
-  ja: '日本語',
-  ko: '한국어',
+interface LanguageInfo {
+  code: string
+  name: string
+  flag: string
 }
+
+const LANGUAGE_INFO: Record<string, LanguageInfo> = {
+  en: { code: 'en', name: 'English',  flag: '🇺🇸' },
+  zh: { code: 'zh', name: '中文',      flag: '🇨🇳' },
+  ja: { code: 'ja', name: '日本語',    flag: '🇯🇵' },
+  ko: { code: 'ko', name: '한국어',    flag: '🇰🇷' },
+}
+
+const AVAILABLE_LANGUAGES: LanguageInfo[] = Object.values(LANGUAGE_INFO)
 
 const staticTranslations: Record<string, unknown> = {
   en: enTranslations,
@@ -68,7 +76,7 @@ export function useI18n() {
   }, [translations])
 
   const changeLanguage = useCallback((lang: string) => {
-    if (!SUPPORTED_LANGUAGES[lang]) return
+    if (!LANGUAGE_INFO[lang]) return
     setCurrentLanguage(lang)
     setTranslations(staticTranslations[lang] ?? staticTranslations.en)
     ;(StorageManager as { set: (k: string, v: string) => void }).set(STORAGE_KEY, lang)
@@ -78,7 +86,8 @@ export function useI18n() {
     t: translate,
     currentLanguage,
     changeLanguage,
-    availableLanguages: SUPPORTED_LANGUAGES,
+    currentLanguageInfo: LANGUAGE_INFO[currentLanguage] ?? LANGUAGE_INFO.en,
+    availableLanguages: AVAILABLE_LANGUAGES,
     isReady: true,
   }
 }
