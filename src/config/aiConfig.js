@@ -1,31 +1,36 @@
 /**
- * AI API 配置默认值（2026版本）
- * 统一管理 AI 模型配置，避免重复定义
+ * AI API configuration defaults.
+ * Values are overridden at runtime by window.__LYRA_CONFIG__ (injected via nginx envsubst).
+ * Falls back to hardcoded defaults when running without Docker.
  */
 
-/**
- * AI配置默认值
- */
+const runtimeCfg = (typeof window !== 'undefined' && window.__LYRA_CONFIG__?.ai) || {};
+
+// Treat placeholder strings (not substituted by envsubst) as absent.
+function env(val, fallback) {
+  if (!val || val.startsWith('${')) return fallback;
+  return val;
+}
+
 export const DEFAULT_AI_CONFIG = {
   anthropic: {
     protocol: 'anthropic',
-    baseUrl: 'https://api.anthropic.com',
-    model: 'claude-opus-4-5-20251101',
-    maxTokens: 4096
+    baseUrl: env(runtimeCfg.protocol === 'anthropic' ? runtimeCfg.baseUrl : undefined, 'https://api.anthropic.com'),
+    model: env(runtimeCfg.protocol === 'anthropic' ? runtimeCfg.model : undefined, 'claude-opus-4-5-20251101'),
+    maxTokens: (runtimeCfg.protocol === 'anthropic' && runtimeCfg.maxTokens) || 4096
   },
   openai: {
     protocol: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-4o-2024-11-20',
-    maxTokens: 4096
+    baseUrl: env(runtimeCfg.protocol === 'openai' ? runtimeCfg.baseUrl : undefined, 'https://api.openai.com/v1'),
+    model: env(runtimeCfg.protocol === 'openai' ? runtimeCfg.model : undefined, 'gpt-4o-2024-11-20'),
+    maxTokens: (runtimeCfg.protocol === 'openai' && runtimeCfg.maxTokens) || 4096
   }
 };
 
-/**
- * 获取默认配置
- * @param {string} protocol - 'anthropic' 或 'openai'
- * @returns {Object} 配置对象
- */
+// Inject apiKey from runtime config so the app starts pre-configured without UI input.
+export const RUNTIME_API_KEY = env(runtimeCfg.apiKey, '');
+export const RUNTIME_PROTOCOL = env(runtimeCfg.protocol, '');
+
 export function getDefaultConfig(protocol = 'anthropic') {
   return DEFAULT_AI_CONFIG[protocol] || DEFAULT_AI_CONFIG.anthropic;
 }

@@ -69,7 +69,7 @@ export function APISettings() {
 
   const handleSave = useCallback(() => {
     if (!apiKey.trim()) {
-      setError('请输入API密钥')
+      setError('Please enter an API key')
       return
     }
 
@@ -120,7 +120,7 @@ export function APISettings() {
       </div>
 
       <div className="lyra-form-group">
-        <label>API 密钥 *</label>
+        <label>API Key *</label>
         <Input
           type="password"
           value={apiKey}
@@ -128,29 +128,29 @@ export function APISettings() {
           placeholder={protocol === 'openai' ? 'sk-...' : 'sk-ant-...'}
         />
         <span className="lyra-form-hint">
-          {protocol === 'openai' ? 'OpenAI 或兼容服务的 API Key' : '从 Anthropic Console 获取 API 密钥'}
+          {protocol === 'openai' ? 'API key for OpenAI or compatible service' : 'Obtain your API key from Anthropic Console'}
         </span>
       </div>
 
       <div className="lyra-form-group">
-        <label>API 基础URL</label>
+        <label>API Base URL</label>
         <Input
           value={baseUrl}
           onChange={setBaseUrl}
           placeholder={protocol === 'openai' ? 'https://api.openai.com/v1' : 'https://api.anthropic.com'}
         />
         <span className="lyra-form-hint">
-          默认为官方接口，支持 OneAPI / NewAPI / DeepSeek 等中转
+          Defaults to the official endpoint. Supports any OpenAI-compatible proxy.
         </span>
       </div>
 
       <div className="lyra-form-group">
-        <label>模型</label>
+        <label>Model</label>
         <div style={{ display: 'flex', gap: '8px' }}>
           <Input
             value={model}
             onChange={setModel}
-            placeholder={protocol === 'openai' ? "例如: gpt-4o" : "例如: claude-3-5-sonnet-20241022"}
+            placeholder={protocol === 'openai' ? 'e.g. gpt-4o' : 'e.g. claude-3-5-sonnet-20241022'}
             style={{ flex: 1 }}
           />
           <select
@@ -159,19 +159,19 @@ export function APISettings() {
             onChange={(e) => e.target.value && setModel(e.target.value)}
             value=""
           >
-            <option value="" disabled>选择...</option>
+            <option value="" disabled>Select...</option>
             {currentModels.map(opt => (
               <option key={opt.id} value={opt.id}>{opt.name}</option>
             ))}
           </select>
         </div>
         <span className="lyra-form-hint">
-          手动输入模型名称或从列表快速选择
+          Type a model name or pick one from the list
         </span>
       </div>
 
       <div className="lyra-form-group">
-        <label>最大Token数</label>
+        <label>Max Tokens</label>
         <Input
           type="number"
           value={maxTokens}
@@ -192,16 +192,16 @@ export function APISettings() {
           variant="primary"
           onClick={handleSave}
         >
-          {isSaved ? '✓ 已保存' : '保存配置'}
+          {isSaved ? '✓ Saved' : 'Save configuration'}
         </Button>
       </div>
 
       <div className="lyra-api-settings__note">
-        <h5>注意事项</h5>
+        <h5>Notes</h5>
         <ul>
-          <li>API密钥仅保存在本地，不会上传到任何服务器</li>
-          <li>请确保有足够的API额度</li>
-          <li>建议使用代理以获得更稳定的连接</li>
+          <li>Your API key is stored locally only and never sent to any external server</li>
+          <li>Make sure your account has sufficient API credits</li>
+          <li>A proxy is recommended for a more stable connection</li>
         </ul>
       </div>
     </div>

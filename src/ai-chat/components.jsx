@@ -1123,10 +1123,10 @@ export function ChatPanel() {
       <div className="lyra-chat-panel lyra-chat-panel--unconfigured">
         <div className="lyra-chat-panel__notice">
           <span className="lyra-chat-panel__notice-icon">⚙️</span>
-          <h4>需要配置API</h4>
-          <p>请打开主设置面板（点击右上角⚙️图标）配置AI Chat API密钥</p>
+          <h4>API configuration required</h4>
+          <p>Open the main settings panel (⚙️ icon in the top right) to configure your AI Chat API key</p>
           <p style={{ fontSize: '0.85em', marginTop: '0.5em', opacity: 0.7 }}>
-            设置 → AI设置 → AI Chat API配置
+            Settings → AI Settings → AI Chat API Configuration
           </p>
         </div>
       </div>

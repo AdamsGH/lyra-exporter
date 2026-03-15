@@ -38,6 +38,7 @@ import { useI18n } from './index.js';
 
 // AI Chat 浮窗组件
 import { FloatPanel, FloatPanelTrigger, initLyraAIChat, chatService } from './ai-chat';
+import { RUNTIME_API_KEY, RUNTIME_PROTOCOL, DEFAULT_AI_CONFIG } from './config/aiConfig.js';
 import './ai-chat/styles.css';
 
 // ==================== 通用工具类 ====================
@@ -1201,11 +1202,16 @@ function App() {
 
   // 初始化 AI Chat - 从 localStorage 加载配置
   useEffect(() => {
-    // 从 localStorage 读取配置（由 SettingsManager 管理）
-    const config = StorageManager.get('ai-chat-config');
-    if (config) {
-      // 配置 chatService
+    // Runtime config from env (injected via nginx) takes priority over localStorage.
+    const savedConfig = StorageManager.get('ai-chat-config');
+    if (RUNTIME_API_KEY) {
+      const protocol = RUNTIME_PROTOCOL || 'openai';
+      const defaults = DEFAULT_AI_CONFIG[protocol] || DEFAULT_AI_CONFIG.openai;
+      const config = { ...defaults, apiKey: RUNTIME_API_KEY, protocol };
       chatService.configure(config);
+      console.log('[App] AI Chat configured from runtime env');
+    } else if (savedConfig) {
+      chatService.configure(savedConfig);
       console.log('[App] AI Chat configured from localStorage');
     }
 
