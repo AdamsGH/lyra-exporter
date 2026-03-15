@@ -53,26 +53,42 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error
 
 function AppInner() {
   useSync()
-  const { files, addFiles } = useFilesStore()
+  const { files, addFiles, setHydrated, isHydrating } = useFilesStore()
   const hasFiles = files.length > 0
 
-  // Restore from IndexedDB on first mount
+  // Restore from IndexedDB on first mount, always call setHydrated when done
   useEffect(() => {
-    if (files.length > 0) return
-    getAllCachedFiles().then((cached) => {
-      if (cached.length === 0) return
-      const loaded: LoadedFile[] = cached.map(({ name, raw }) => ({
-        id: generateId(),
-        name,
-        raw,
-        loadedAt: Date.now(),
-        ...parseRaw(raw, name),
-      }))
-      addFiles(loaded)
-    }).catch(console.error)
+    getAllCachedFiles()
+      .then((cached) => {
+        if (cached.length > 0) {
+          const loaded: LoadedFile[] = cached.map(({ name, raw }) => ({
+            id: generateId(),
+            name,
+            raw,
+            loadedAt: Date.now(),
+            ...parseRaw(raw, name),
+          }))
+          addFiles(loaded)
+        }
+      })
+      .catch(console.error)
+      .finally(() => setHydrated())
   // Run once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  if (isHydrating) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 700, background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', letterSpacing: 3, marginBottom: 16 }}>
+            LYRA
+          </div>
+          <div style={{ width: 32, height: 32, border: '2px solid var(--border-primary)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <PageShell>

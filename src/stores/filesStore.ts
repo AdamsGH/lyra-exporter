@@ -12,15 +12,18 @@ export interface LoadedFile {
 interface FilesState {
   files: LoadedFile[]
   currentFileId: string | null
+  isHydrating: boolean
   addFiles: (files: LoadedFile[]) => void
   removeFile: (id: string) => void
   setCurrentFile: (id: string | null) => void
   clearFiles: () => void
+  setHydrated: () => void
 }
 
 export const useFilesStore = create<FilesState>((set) => ({
   files: [],
   currentFileId: null,
+  isHydrating: true,
 
   addFiles: (newFiles) =>
     set((s) => ({
@@ -31,10 +34,12 @@ export const useFilesStore = create<FilesState>((set) => ({
   removeFile: (id) =>
     set((s) => ({
       files: s.files.filter((f) => f.id !== id),
-      currentFileId: s.currentFileId === id ? (s.files[0]?.id ?? null) : s.currentFileId,
+      currentFileId: s.currentFileId === id ? (s.files.find((f) => f.id !== id)?.id ?? null) : s.currentFileId,
     })),
 
   setCurrentFile: (id) => set({ currentFileId: id }),
 
   clearFiles: () => set({ files: [], currentFileId: null }),
+
+  setHydrated: () => set({ isHydrating: false }),
 }))
