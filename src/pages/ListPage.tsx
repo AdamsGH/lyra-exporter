@@ -1,45 +1,119 @@
-import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRef, useState, useMemo, useCallback } from 'react'
 import { useFiles } from '@/hooks/useFiles'
 import { useFilesStore } from '@/stores/filesStore'
-import { useI18n } from '@/i18n'
+import { useMetaStore } from '@/stores/metaStore'
+import { useProjectsStore } from '@/stores/projectsStore'
+import { ConversationGrid } from '@/components/ConversationGrid'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { deleteCachedFile } from '@/lib/storage'
-import { Card as UnifiedCard } from '../components/UnifiedCard'
-import FloatingActionButton from '../components/FloatingActionButton'
+import type { LoadedFile } from '@/stores/filesStore'
+import type { CardData } from '@/hooks/useCardData'
 
-const PLATFORM_COLORS: Record<string, string> = {
-  claude: '#d97706',
-  chatgpt: '#19c37d',
-  gemini: '#4285f4',
-  deepseek: '#5b8def',
-  grok: '#a855f7',
-  kimi: '#06b6d4',
-  default: '#6b7280',
+const ORDER_KEY = 'lyra:card-order'
+
+function loadOrder(): string[] {
+  try { return JSON.parse(localStorage.getItem(ORDER_KEY) ?? '[]') } catch { return [] }
+}
+function saveOrder(ids: string[]) {
+  localStorage.setItem(ORDER_KEY, JSON.stringify(ids))
 }
 
-function getPlatformColor(platform: string) {
-  return PLATFORM_COLORS[platform?.toLowerCase()] ?? PLATFORM_COLORS.default
+type ParsedFile = {
+  format?: string
+  platform?: string
+  meta_info?: { title?: string; model?: string; created_at?: string }
+  chat_history?: unknown[]
+  branches?: unknown[]
+  uuid?: string
+}
+
+function fileToCardData(
+  file: LoadedFile,
+  metaMap: Record<string, { starred?: boolean; tags?: string[]; project_id?: number | null }>,
+  projects: { id: number; name: string; color: string }[]
+): CardData {
+  const parsed = file.parsed as ParsedFile | undefined
+  const meta_info = parsed?.meta_info ?? {}
+  const conversationId = parsed?.uuid ?? meta_info.title ?? file.id
+  const meta = metaMap[conversationId]
+  const projectId = meta?.project_id ?? null
+  const project = projectId ? projects.find((p) => p.id === projectId) ?? null : null
+
+  return {
+    conversationId,
+    fileId: file.id,
+    title: file.name.replace(/\.json$/, ''),
+    platform: parsed?.platform ?? file.platform ?? 'unknown',
+    format: parsed?.format ?? file.platform ?? 'unknown',
+    model: meta_info.model ?? '',
+    createdAt: meta_info.created_at ?? null,
+    messageCount: (parsed?.chat_history ?? []).length,
+    branchCount: (parsed?.branches ?? []).length,
+    starred: meta?.starred ?? false,
+    tags: meta?.tags ?? [],
+    projectId,
+    projectName: project?.name ?? null,
+    projectColor: project?.color ?? null,
+  }
 }
 
 export function ListPage() {
-  const navigate = useNavigate()
-  const { t } = useI18n()
   const { files, loadFromFileObjects, removeFile } = useFiles()
-  const setCurrentFile = useFilesStore((s) => s.setCurrentFile)
+  const renameFile = useFilesStore((s) => s.renameFile)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
+
   const [search, setSearch] = useState('')
-  const [filterPlatform, setFilterPlatform] = useState('')
+  const [platformFilter, setPlatformFilter] = useState('all')
+  const [tagFilter, setTagFilter] = useState('')
+  const [order, setOrder] = useState<string[]>(loadOrder)
 
-  const platforms = [...new Set(files.map((f) => f.platform).filter(Boolean))]
+  const metaMap = useMetaStore((s) => s.meta) as Record<string, { starred?: boolean; tags?: string[]; project_id?: number | null }>
+  const projects = useProjectsStore((s) => s.projects) as { id: number; name: string; color: string }[]
 
-  const filtered = files.filter((f) => {
-    const name = f.name.toLowerCase()
+  const allCardData = useMemo(
+    () => files.map((f) => fileToCardData(f, metaMap, projects)),
+    [files, metaMap, projects]
+  )
+
+  const platforms = useMemo(
+    () => [...new Set(allCardData.map((c) => c.platform).filter((p) => p !== 'unknown'))],
+    [allCardData]
+  )
+
+  const allTags = useMemo(
+    () => [...new Set(allCardData.flatMap((c) => c.tags))].sort(),
+    [allCardData]
+  )
+
+  // Apply sort order, then filters
+  const sorted = useMemo(() => {
+    if (order.length === 0) return allCardData
+    const pos = new Map(order.map((id, i) => [id, i]))
+    return [...allCardData].sort((a, b) => {
+      const ai = pos.get(a.fileId) ?? Infinity
+      const bi = pos.get(b.fileId) ?? Infinity
+      return ai - bi
+    })
+  }, [allCardData, order])
+
+  const filtered = useMemo(() => {
     const q = search.toLowerCase()
-    if (q && !name.includes(q)) return false
-    if (filterPlatform && f.platform !== filterPlatform) return false
-    return true
-  })
+    return sorted.filter((c) => {
+      if (q && !c.title.toLowerCase().includes(q)) return false
+      if (platformFilter !== 'all' && c.platform !== platformFilter) return false
+      if (tagFilter && !c.tags.includes(tagFilter)) return false
+      return true
+    })
+  }, [sorted, search, platformFilter, tagFilter])
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList) return
@@ -48,135 +122,110 @@ export function ListPage() {
     await loadFromFileObjects(jsonFiles)
   }
 
-  async function handleRemove(fileId: string, fileName: string) {
-    await deleteCachedFile(fileName)
+  const handleRemove = useCallback(async (fileId: string) => {
+    const file = files.find((f) => f.id === fileId)
+    if (file) await deleteCachedFile(file.name).catch(() => {})
     removeFile(fileId)
-  }
+  }, [files, removeFile])
 
-  function handleSelect(file: (typeof files)[0]) {
-    setCurrentFile(file.id)
-    navigate(`/timeline/${file.id}`)
-  }
+  const handleReorder = useCallback((ids: string[]) => {
+    setOrder(ids)
+    saveOrder(ids)
+  }, [])
 
-  // Build UnifiedCard-compatible item from our file
-  function toCardItem(file: (typeof files)[0], index: number) {
-    const parsed = file.parsed as {
-      format?: string
-      platform?: string
-      chat_history?: unknown[]
-      meta_info?: { title?: string; model?: string }
-    } | null
-    return {
-      type: 'file',
-      uuid: file.id,
-      name: file.name.replace(/\.json$/, ''),
-      originalName: file.name.replace(/\.json$/, ''),
-      fileName: file.name,
-      fileIndex: index,
-      isCurrentFile: false,
-      format: parsed?.format ?? parsed?.platform ?? 'unknown',
-      model: parsed?.meta_info?.model ?? '',
-      messageCount: parsed?.chat_history?.length ?? 0,
-      conversationCount: 1,
-      platform: file.platform ?? 'unknown',
-      created_at: null,
-      size: 0,
-      summary: `${parsed?.chat_history?.length ?? 0} messages`,
-    }
-  }
+  const handleRenameConfirm = useCallback((fileId: string, name: string) => {
+    renameFile?.(fileId, name)
+  }, [renameFile])
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>
-          {t('listPage.title') || 'Conversations'}
-          <span style={{ marginLeft: 10, fontSize: 14, fontWeight: 400, color: 'var(--text-tertiary)' }}>
-            {files.length} {t('listPage.files') || 'files'}
+          Conversations
+          <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 400, color: 'var(--text-tertiary)' }}>
+            {filtered.length}{filtered.length !== files.length ? ` / ${files.length}` : ''}
           </span>
         </h2>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn-secondary small" onClick={() => fileInputRef.current?.click()}>
-            + {t('listPage.addFile') || 'Add File'}
+            + File
           </button>
           <button className="btn-secondary small" onClick={() => folderInputRef.current?.click()}>
-            + {t('listPage.addFolder') || 'Add Folder'}
+            + Folder
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-        <input
-          type="text"
-          placeholder={t('listPage.search') || 'Search...'}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Input
+          placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{
-            flex: 1,
-            minWidth: 200,
-            padding: '6px 12px',
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-primary)',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--text-primary)',
-            fontSize: 13,
-            outline: 'none',
-          }}
+          style={{ maxWidth: 260, height: 32, fontSize: 13 }}
         />
+
         {platforms.length > 1 && (
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              className={`btn-secondary small${!filterPlatform ? ' active' : ''}`}
-              onClick={() => setFilterPlatform('')}
-            >
-              All
-            </button>
-            {platforms.map((p) => (
-              <button
-                key={p}
-                className={`btn-secondary small${filterPlatform === p ? ' active' : ''}`}
-                onClick={() => setFilterPlatform(filterPlatform === p ? '' : p ?? '')}
-                style={filterPlatform === p ? { borderColor: getPlatformColor(p ?? ''), color: getPlatformColor(p ?? '') } : {}}
+          <Select value={platformFilter} onValueChange={setPlatformFilter}>
+            <SelectTrigger style={{ width: 140, height: 32, fontSize: 13 }}>
+              <SelectValue placeholder="Platform" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All platforms</SelectItem>
+              {platforms.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {allTags.length > 0 && (
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {allTags.map((tag) => (
+              <Badge
+                key={tag}
+                variant={tagFilter === tag ? 'default' : 'secondary'}
+                style={{ cursor: 'pointer', fontSize: 11 }}
+                onClick={() => setTagFilter(tagFilter === tag ? '' : tag)}
               >
-                {p}
-              </button>
+                {tag}
+              </Badge>
             ))}
           </div>
         )}
       </div>
 
       {/* Grid */}
-      {filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-tertiary)' }}>
-          {files.length === 0
-            ? t('listPage.empty') || 'No files loaded. Drop JSON files here or click Add File.'
-            : t('listPage.noResults') || 'No matching files.'}
+      {files.length === 0 ? (
+        <div
+          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', flexDirection: 'column', gap: 12 }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.preventDefault(); handleFiles(e.dataTransfer.files) }}
+        >
+          <div style={{ fontSize: 40, opacity: 0.3 }}>◆</div>
+          <p style={{ margin: 0 }}>No files loaded. Drop JSON files here or click + File.</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>
+          No conversations match the current filters.
         </div>
       ) : (
-        <div className="conversations-grid">
-          {filtered.map((file, i) => (
-            <UnifiedCard
-              key={file.id}
-              item={toCardItem(file, i) as any}
-              isSelected={false}
-              onSelect={() => handleSelect(file)}
-              onRemove={() => handleRemove(file.id, file.name)}
-            />
-          ))}
-        </div>
+        <ConversationGrid
+          items={filtered}
+          onRemove={handleRemove}
+          onReorder={handleReorder}
+          onRenameConfirm={handleRenameConfirm}
+        />
       )}
 
-      <input ref={fileInputRef} type="file" accept=".json" multiple hidden onChange={(e) => handleFiles(e.target.files)} />
+      <input ref={fileInputRef} type="file" accept=".json" multiple hidden
+        onChange={(e) => handleFiles(e.target.files)} />
       <input ref={folderInputRef} type="file" accept=".json" multiple hidden
         {...{ webkitdirectory: '', directory: '' } as React.InputHTMLAttributes<HTMLInputElement>}
-        onChange={(e) => handleFiles(e.target.files)}
-      />
-
-      <FloatingActionButton
-        onClick={() => fileInputRef.current?.click()}
-        title="Add files"
-      />
+        onChange={(e) => handleFiles(e.target.files)} />
     </div>
   )
 }

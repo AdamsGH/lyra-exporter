@@ -8,6 +8,7 @@ interface MetaState {
   load: () => Promise<void>
   update: (conversationId: string, patch: Partial<Omit<ConversationMeta, 'conversation_id'>>) => Promise<void>
   getMeta: (conversationId: string) => ConversationMeta
+  toggleStar: (conversationId: string) => void
 }
 
 const DEFAULT_META = (id: string): ConversationMeta => ({
@@ -50,4 +51,9 @@ export const useMetaStore = create<MetaState>((set, get) => ({
 
   getMeta: (conversationId) =>
     get().meta[conversationId] ?? DEFAULT_META(conversationId),
+
+  toggleStar: (conversationId) => {
+    const current = get().getMeta(conversationId)
+    get().update(conversationId, { starred: !current.starred })
+  },
 }))
