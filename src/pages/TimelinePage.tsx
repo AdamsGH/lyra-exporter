@@ -5,6 +5,7 @@ import { useMeta } from '@/hooks/useMeta'
 import { useProjectsStore } from '@/stores/projectsStore'
 import { useI18n } from '@/i18n'
 import ConversationTimeline from '../components/ConversationTimeline'
+import FloatingActionButton from '../components/FloatingActionButton'
 import { MarkManager } from '../utils/data/markManager'
 import { SortManager } from '../utils/data/sortManager'
 import { StatsCalculator } from '../utils/data/statsCalculator'
@@ -323,6 +324,12 @@ export function TimelinePage() {
           </div>
         </div>
       </div>
+
+      <FloatingActionButton
+        onClick={() => setMetaOpen(true)}
+        title="Details"
+        hidden={hideNavbar}
+      />
 
       {metaOpen && <MetaModal conversationId={fileId ?? ''} onClose={() => setMetaOpen(false)} />}
     </div>

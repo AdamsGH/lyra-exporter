@@ -5,6 +5,7 @@ import { useFilesStore } from '@/stores/filesStore'
 import { useI18n } from '@/i18n'
 import { deleteCachedFile } from '@/lib/storage'
 import { Card as UnifiedCard } from '../components/UnifiedCard'
+import FloatingActionButton from '../components/FloatingActionButton'
 
 const PLATFORM_COLORS: Record<string, string> = {
   claude: '#d97706',
@@ -170,6 +171,11 @@ export function ListPage() {
       <input ref={folderInputRef} type="file" accept=".json" multiple hidden
         {...{ webkitdirectory: '', directory: '' } as React.InputHTMLAttributes<HTMLInputElement>}
         onChange={(e) => handleFiles(e.target.files)}
+      />
+
+      <FloatingActionButton
+        onClick={() => fileInputRef.current?.click()}
+        title="Add files"
       />
     </div>
   )
