@@ -158,24 +158,17 @@ export function ListPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{
-            maxWidth: 260,
-            height: 32,
-            fontSize: 13,
-            background: 'var(--bg-secondary)',
-            borderColor: 'var(--border-primary)',
-            color: 'var(--text-primary)',
-          }}
+          className="h-8 w-full max-w-xs text-sm"
         />
 
         {platforms.length > 1 && (
           <Select value={platformFilter} onValueChange={setPlatformFilter}>
-            <SelectTrigger style={{ width: 140, height: 32, fontSize: 13 }}>
+            <SelectTrigger className="h-8 w-36 text-sm">
               <SelectValue placeholder="Platform" />
             </SelectTrigger>
             <SelectContent>
@@ -190,12 +183,12 @@ export function ListPage() {
         )}
 
         {allTags.length > 0 && (
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          <div className="flex flex-wrap gap-1">
             {allTags.map((tag) => (
               <Badge
                 key={tag}
                 variant={tagFilter === tag ? 'default' : 'secondary'}
-                style={{ cursor: 'pointer', fontSize: 11 }}
+                className="cursor-pointer text-[11px]"
                 onClick={() => setTagFilter(tagFilter === tag ? '' : tag)}
               >
                 {tag}

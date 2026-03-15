@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useLayoutEffect } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   DndContext,
@@ -19,13 +19,11 @@ import { ConversationCard } from './ConversationCard'
 import { RenameDialog } from './RenameDialog'
 import type { CardData } from '@/hooks/useCardData'
 
-const CARD_MIN_WIDTH = 300
-const CARD_HEIGHT = 195
-const GAP = 20
-
-function calcCols(width: number) {
-  return Math.max(1, Math.floor((width + GAP) / (CARD_MIN_WIDTH + GAP)))
-}
+// Virtualize only for large lists
+const VIRTUAL_THRESHOLD = 100
+const CARD_MIN_WIDTH = 320
+const CARD_HEIGHT = 200
+const GAP = 16
 
 interface SortableCardProps {
   data: CardData
@@ -38,15 +36,91 @@ function SortableCard({ data, onRemove, onRename }: SortableCardProps) {
     id: data.fileId,
   })
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+      }}
+      {...attributes}
+      {...listeners}
+    >
+      <ConversationCard data={data} onRemove={onRemove} onRename={onRename} />
+    </div>
+  )
+}
+
+// Simple CSS-grid layout for normal lists
+function SimpleGrid({ items, onRemove, onRename }: { items: CardData[]; onRemove: (id: string) => void; onRename: (d: CardData) => void }) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(auto-fill, minmax(${CARD_MIN_WIDTH}px, 1fr))`,
+        gap: GAP,
+      }}
+    >
+      {items.map((data) => (
+        <SortableCard
+          key={data.fileId}
+          data={data}
+          onRemove={() => onRemove(data.fileId)}
+          onRename={() => onRename(data)}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Virtualised layout for large lists - groups items into rows
+function VirtualGrid({ items, onRemove, onRename }: { items: CardData[]; onRemove: (id: string) => void; onRename: (d: CardData) => void }) {
+  const parentRef = useRef<HTMLDivElement>(null)
+
+  // Estimate cols based on container width; recomputed by virtualizer naturally
+  const cols = Math.max(1, Math.floor((parentRef.current?.offsetWidth ?? 1200) / (CARD_MIN_WIDTH + GAP)))
+
+  const rows: CardData[][] = []
+  for (let i = 0; i < items.length; i += cols) {
+    rows.push(items.slice(i, i + cols))
   }
 
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => CARD_HEIGHT + GAP,
+    overscan: 5,
+  })
+
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <ConversationCard data={data} onRemove={onRemove} onRename={onRename} />
+    <div ref={parentRef} style={{ height: 'calc(100vh - 140px)', overflowY: 'auto' }}>
+      <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+        {virtualizer.getVirtualItems().map((vRow) => (
+          <div
+            key={vRow.index}
+            style={{
+              position: 'absolute',
+              top: vRow.start,
+              left: 0,
+              right: 0,
+              display: 'grid',
+              gridTemplateColumns: `repeat(${cols}, 1fr)`,
+              gap: GAP,
+              paddingBottom: GAP,
+            }}
+          >
+            {rows[vRow.index].map((data) => (
+              <SortableCard
+                key={data.fileId}
+                data={data}
+                onRemove={() => onRemove(data.fileId)}
+                onRename={() => onRename(data)}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -59,34 +133,7 @@ interface Props {
 }
 
 export function ConversationGrid({ items, onRemove, onReorder, onRenameConfirm }: Props) {
-  const parentRef = useRef<HTMLDivElement>(null)
-  const [cols, setCols] = useState(3)
   const [renaming, setRenaming] = useState<CardData | null>(null)
-
-  // Measure container width and recalculate columns
-  useLayoutEffect(() => {
-    const el = parentRef.current
-    if (!el) return
-    const ro = new ResizeObserver(([entry]) => {
-      setCols(calcCols(entry.contentRect.width))
-    })
-    ro.observe(el)
-    setCols(calcCols(el.offsetWidth))
-    return () => ro.disconnect()
-  }, [])
-
-  // Split into rows based on current col count
-  const rows: CardData[][] = []
-  for (let i = 0; i < items.length; i += cols) {
-    rows.push(items.slice(i, i + cols))
-  }
-
-  const virtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => CARD_HEIGHT + GAP,
-    overscan: 5,
-  })
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -108,43 +155,16 @@ export function ConversationGrid({ items, onRemove, onReorder, onRenameConfirm }
     }
   }, [renaming, onRenameConfirm])
 
+  const useVirtual = items.length > VIRTUAL_THRESHOLD
+
   return (
     <>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map((i) => i.fileId)} strategy={rectSortingStrategy}>
-          <div
-            ref={parentRef}
-            style={{ height: 'calc(100vh - 130px)', overflowY: 'auto', paddingRight: 4 }}
-          >
-            <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-              {virtualizer.getVirtualItems().map((vRow) => (
-                <div
-                  key={vRow.index}
-                  style={{
-                    position: 'absolute',
-                    top: vRow.start,
-                    left: 0,
-                    right: 0,
-                    height: vRow.size,
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                    gap: GAP,
-                    paddingBottom: GAP,
-                    alignItems: 'start',
-                  }}
-                >
-                  {rows[vRow.index].map((data) => (
-                    <SortableCard
-                      key={data.fileId}
-                      data={data}
-                      onRemove={() => onRemove(data.fileId)}
-                      onRename={() => setRenaming(data)}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
+          {useVirtual
+            ? <VirtualGrid items={items} onRemove={onRemove} onRename={setRenaming} />
+            : <SimpleGrid items={items} onRemove={onRemove} onRename={setRenaming} />
+          }
         </SortableContext>
       </DndContext>
 
