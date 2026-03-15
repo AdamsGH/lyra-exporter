@@ -1,0 +1,5 @@
+node_modules
+src-legacy
+build
+.git
+*.md
