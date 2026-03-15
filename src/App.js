@@ -8,6 +8,7 @@ import WelcomePage from './components/WelcomePage';
 import ConversationTimeline from './components/ConversationTimeline';
 import FloatingActionButton from './components/FloatingActionButton';
 import SettingsPanel from './components/SettingsManager';
+import S3FileManager from './components/S3FileManager';
 import ActionPanel from './components/ActionPanel';
 import ScreenshotPreviewPanel from './components/ScreenshotPreviewPanel';
 import { CardGrid } from './components/UnifiedCard';
@@ -39,6 +40,7 @@ import { useI18n } from './index.js';
 // AI Chat 浮窗组件
 import { FloatPanel, FloatPanelTrigger, initLyraAIChat, chatService } from './ai-chat';
 import { RUNTIME_API_KEY, RUNTIME_PROTOCOL, DEFAULT_AI_CONFIG } from './config/aiConfig.js';
+import { useLyraSync } from './services/useLyraSync';
 import './ai-chat/styles.css';
 
 // ==================== 通用工具类 ====================
@@ -844,6 +846,9 @@ function App() {
   // i18n
   const { t } = useI18n();
 
+  // Backend sync (S3 files + DB meta)
+  const lyraSync = useLyraSync();
+
   const {
     files,
     currentFile,
@@ -862,6 +867,7 @@ function App() {
   const [actionPanelSection, setActionPanelSection] = useState('globalSearch');
   const [initialSearchQuery, setInitialSearchQuery] = useState('');
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [showS3Manager, setShowS3Manager] = useState(false);
   const [screenshotPreview, setScreenshotPreview] = useState({
     isOpen: false,
     data: null
@@ -1516,8 +1522,11 @@ function App() {
         const file = files[selectedFileIndex];
         if (file) {
           const fileUuid = generateFileCardUuid(selectedFileIndex, file);
-
           setOperatedFiles(prev => new Set(prev).add(fileUuid));
+
+          // Sync tags to backend
+          const updatedTags = markManagerRef.current.getMarks ? markManagerRef.current.getMarks() : [];
+          lyraSync.syncTags(fileUuid, updatedTags);
         }
       }
 
@@ -1529,6 +1538,10 @@ function App() {
     if (starManagerRef.current) {
       const newStars = starManagerRef.current.toggleStar(conversationUuid, nativeIsStarred);
       setStarredConversations(newStars);
+
+      // Sync starred state to backend
+      const isNowStarred = newStars.includes(conversationUuid);
+      lyraSync.syncStarred(conversationUuid, isNowStarred);
     }
   };
 
@@ -1900,6 +1913,16 @@ function App() {
                 </div>
               )}
 
+              {lyraSync.backendAvailable && (
+                <button
+                  className="btn-secondary small"
+                  onClick={() => setShowS3Manager(true)}
+                  title="Cloud Files"
+                >
+                  ☁️ Cloud
+                </button>
+              )}
+
               <button
                 className="btn-secondary small"
                 onClick={() => setShowSettingsPanel(true)}
@@ -2092,6 +2115,13 @@ function App() {
             onClose={() => setShowSettingsPanel(false)}
             exportOptions={exportOptions}
             setExportOptions={setExportOptions}
+          />
+
+          <S3FileManager
+            isOpen={showS3Manager}
+            onClose={() => setShowS3Manager(false)}
+            lyraSync={lyraSync}
+            onLoadFiles={(files) => fileActions.loadFiles(files)}
           />
 
           {/* 操作面板 - 整合全局搜索、语义搜索、导出功能 */}
